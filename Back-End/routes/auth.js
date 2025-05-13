@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const authMiddleware = require('../middleware/authMiddleware'); // Tambahan untuk middleware
 
 const router = express.Router();
 
@@ -114,6 +115,21 @@ router.get('/validate-token', async (req, res) => {
     res.json({ valid: true, user });
   } catch (error) {
     res.status(401).json({ valid: false });
+  }
+});
+
+// Endpoint untuk ambil data user berdasarkan token
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Auth Me error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
